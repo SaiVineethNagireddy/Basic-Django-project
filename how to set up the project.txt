@@ -1,0 +1,447 @@
+How to create the Django application
+	
+step1:
+ We have to create a mkdir foldername
+ This creates a folder
+step2:
+ then we have to open it in PyCharm
+ Then we have to create a virtual environment
+	python -m venv venv
+step3:
+ then we have to activate the virtual  env by:
+	venv\scripts\activate
+step4:
+ now after that we have to install the Django
+	pip install Django
+step5:
+ now we have to create a project
+	django-admin startproject name
+step6:
+ now go to that project directory
+	cd name
+step7:
+ now create an app using
+	python manage.py startapp appname
+step8:
+ now test run the server by
+	python manage.py runserver
+
+
+creating a sample project using Django on a book store
+	
+bookshop_project/
+│
+├── bookshop/
+├── store/
+├── templates/
+├── static/
+├── venv/
+└── manage.py
+
+First creating a model inside the store:
+	
+from django.db import models
+#creating models for our database
+from django.contrib.auth.models import User
+
+class Book(models.Model):
+    title = models.CharField(max_length=225)
+    author = models.CharField(max_length=225)
+    price = models.IntegerField()
+    stock = models.IntegerField()
+    added_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+from django.db import models
+the models consist of the text fields like charfield, integerfield, datefield,decimalfield etc..
+
+from django.contrib.auth.models import User
+
+Imports Django’s built-in User model.
+Django already provides a ready-made authentication system:
+Username
+Password
+Email
+Login / Logout
+Permissions
+
+mainly helpful for this added_by = models.ForeignKey(User, on_delete=models.CASCADE)
+on_delete=models.CASCADE which means if the user gets deleted then the all his records gets deleted
+
+step9: now create the database tables
+	python manage.py makemigrations
+	python manage.py migrate
+
+makemigrations → Creates migration file
+
+migrate → Applies changes to database
+
+step10:Create Superuser (Admin)
+	python manage.py createsuperuser
+after running this it ask these details
+		
+Username (leave blank to use 'saivineeth'): 
+Email address: nagireddysaivineeth@gmail.com
+Password: 
+Password (again): 
+Error: Your passwords didn't match.
+Password: 
+Password (again): 
+This password is too short. It must contain at least 8 characters.
+Bypass password validation and create user anyway? [y/N]: y
+Superuser created successfully.
+
+step11: After creating the admin go to the admin.py in the app and the register the model that we have created in that
+ by importing the model by 
+	from .model import classname
+	admin.site.register(classname)
+
+step12:then create forms
+create a py file in the app
+
+from django import forms
+from .models import Book
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+
+class BookForm(forms.ModelForm):
+    class Meta:
+        model = Book
+        fields = ['title', 'author', 'price', 'stock']
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+Imports Django’s form system.
+Django forms help you:
+Take user input
+Validate data
+Convert input into Python objects
+Save data to database
+
+then we will import the model
+from .models import Book
+
+then the users model--because register form creates a new model
+from django.contrib.auth.models import User
+
+import the user creation form
+from django.contrib.auth.forms import UserCreationForm
+
+Django already provides a built-in form to create users.
+It automatically:
+Hashes passwords
+Validates password strength
+Checks password confirmation
+Saves user securely
+
+then we create a form for the books
+class BookForm(forms.ModelForm):
+
+the ModelForm automatically creates the
+Creates form fields
+Connects them to model fields
+Saves directly into database
+
+class Meta tells which fields to include
+we will define the model inside and then the fields
+
+
+step13:
+Then create the views logic
+now import the following
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Book
+from .forms import BookForm, RegisterForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+
+Then we have to write the logic for the views and add the CRUD operations.
+Here we write different functions for each operation
+
+
+Register View function
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = RegisterForm()
+    return render(request, 'register.html', {'form': form})
+
+
+Login View
+def user_login(request):
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            return redirect('book_list')
+    return render(request, 'login.html')
+
+Logout
+def user_logout(request):
+    logout(request)
+    return redirect('login')
+
+Book List (Read)
+@login_required
+def book_list(request):
+    books = Book.objects.all()
+    return render(request, 'book_list.html', {'books': books})
+
+Add Book (Create)
+@login_required
+def add_book(request):
+    form = BookForm(request.POST or None)
+    if form.is_valid():
+        book = form.save(commit=False)
+        book.added_by = request.user
+        book.save()
+        return redirect('book_list')
+    return render(request, 'add_book.html', {'form': form})
+
+
+Update Book
+@login_required
+def update_book(request, id):
+    book = get_object_or_404(Book, id=id)
+    form = BookForm(request.POST or None, instance=book)
+    if form.is_valid():
+        form.save()
+        return redirect('book_list')
+    return render(request, 'add_book.html', {'form': form})
+
+Delete Book
+@login_required
+def delete_book(request, id):
+    book = get_object_or_404(Book, id=id)
+    book.delete()
+    return redirect('book_list')
+
+Sell Book
+@login_required
+def sell_book(request, id):
+    book = get_object_or_404(Book, id=id)
+    if book.stock > 0:
+        book.stock -= 1
+        book.save()
+    return redirect('book_list')
+
+step14: setting up the url's
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.book_list, name='book_list'),
+    path('add/', views.add_book, name='add_book'),
+    path('update/<int:id>/', views.update_book, name='update_book'),
+    path('delete/<int:id>/', views.delete_book, name='delete_book'),
+    path('sell/<int:id>/', views.sell_book, name='sell_book'),
+    path('register/', views.register, name='register'),
+    path('login/', views.user_login, name='login'),
+    path('logout/', views.user_logout, name='logout'),
+]
+
+from django.urls import path, include
+
+urlpatterns = [
+    path('', include('store.urls')),
+]
+
+step15:
+creating templates
+
+register.html
+
+<h2>Register</h2>
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Register</button>
+</form>
+<a href="{% url 'login' %}">Login</a>
+
+
+login.html
+
+<h2>Login</h2>
+<form method="POST">
+    {% csrf_token %}
+    <input type="text" name="username" placeholder="Username">
+    <input type="password" name="password" placeholder="Password">
+    <button type="submit">Login</button>
+</form>
+<a href="{% url 'register' %}">Register</a>
+
+book_list.html
+
+<h2>Book List</h2>
+<a href="{% url 'add_book' %}">Add Book</a>
+<a href="{% url 'logout' %}">Logout</a>
+
+<table border="1">
+<tr>
+    <th>Title</th>
+    <th>Author</th>
+    <th>Price</th>
+    <th>Stock</th>
+    <th>Actions</th>
+</tr>
+
+{% for book in books %}
+<tr>
+    <td>{{ book.title }}</td>
+    <td>{{ book.author }}</td>
+    <td>{{ book.price }}</td>
+    <td>{{ book.stock }}</td>
+    <td>
+        <a href="{% url 'update_book' book.id %}">Edit</a>
+        <a href="{% url 'delete_book' book.id %}">Delete</a>
+        <a href="{% url 'sell_book' book.id %}">Sell</a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+
+add_book.html
+
+<h2>Add / Update Book</h2>
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+<a href="{% url 'book_list' %}">Back</a>
+
+
+add to the templates directory(if inside the project file
+import os
+
+TEMPLATES = [
+    {
+        ...
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        ...
+    },
+]
+
+
+if the templates are outside the folder then
+import os
+
+TEMPLATES = [
+    {
+        ...
+        'DIRS': [os.path.join(BASE_DIR.parent, 'templates')],
+        ...
+    },
+]
+
+
+step16:
+Adding a css file
+create a staticfolder then create a css file
+then go to the settings.py
+	STATIC_URL = '/static/'
+	STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+then add it to the html files
+	<link rel="stylesheet" href="{% static 'style.css' %}">
+	{% load static %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
