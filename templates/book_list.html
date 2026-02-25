@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+<h2>Book List</h2>
+<a href="{% url 'add_book' %}">Add Book</a>
+<a href="{% url 'logout' %}">Logout</a>
+
+<table border="1">
+<tr>
+    <th>Title</th>
+    <th>Author</th>
+    <th>Price</th>
+    <th>Stock</th>
+    <th>Actions</th>
+</tr>
+
+{% for book in books %}
+<tr>
+    <td>{{ book.title }}</td>
+    <td>{{ book.author }}</td>
+    <td>{{ book.price }}</td>
+    <td>{{ book.stock }}</td>
+    <td>
+        <a href="{% url 'update_book' book.id %}">Edit</a>
+        <a href="{% url 'delete_book' book.id %}">Delete</a>
+        <a href="{% url 'sell_book' book.id %}">Sell</a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>
