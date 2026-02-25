@@ -1,10 +1,10 @@
 📘 Bookshop Management System
 📌 Project Description
-
+<hr>
 The Bookshop Management System is a simple Django web application that performs basic CRUD operations (Create, Read, Update, Delete) for managing books.
 
 This project demonstrates how Django’s MVT architecture works in a real application.
-
+<hr>
 🚀 Features
 
 View list of all books
@@ -16,7 +16,7 @@ Update book details
 Delete a book
 
 Simple UI using HTML and CSS
-
+<hr>
 🛠️ Technologies Used
 
 Python 3.x
@@ -28,7 +28,7 @@ SQLite (default database)
 HTML
 
 CSS
-
+<hr>
 📂 Project Structure
 bookshop/
 │
@@ -43,6 +43,7 @@ bookshop/
 ├── db.sqlite3
 ├── manage.py
 └── README.md
+<hr>
 📊 Model Used
 from django.db import models
 
@@ -89,6 +90,7 @@ python manage.py runserver
 Open in browser:
 
 http://127.0.0.1:8000/
+<hr>
 🎯 Learning Outcomes
 
 Understanding Django MVT architecture
